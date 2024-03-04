@@ -27,26 +27,31 @@ jobs:
             rust: stable
             target: x86_64-unknown-linux-musl
             cargo: cargo
+            build_dir: "target/release"
           - build: linux musl aarch64
             os: ubuntu-latest
             rust: stable
             target: aarch64-unknown-linux-musl
             cargo: cross
+            build_dir: "target/x86_64-unknown-linux-gnu/release"
           - build: macos x64
             os: macos-latest
             rust: stable
             target: x86_64-apple-darwin
             cargo: cargo
+            build_dir: "target/release"
           - build: macos aarch64
             os: macos-latest
             rust: stable
             target: aarch64-apple-darwin
             cargo: cargo
+            build_dir: "target/release"
           - build: pc windows msvc x64
             os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
             cargo: cargo
+            build_dir: "target/release"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -94,7 +99,7 @@ jobs:
           else
             filename="obs-countdown"
           fi
-          bin="target/release/$filename"
+          bin="${{ matrix.build_dir }}/$filename"
           echo "BIN=$bin" >> $GITHUB_ENV
           echo "FILENAME=$filename" >> $GITHUB_ENV
 
@@ -103,7 +108,7 @@ jobs:
 
       - name: Create checksum
         id: make-checksum
-        working-directory: ./target/release
+        working-directory: ./${{ matrix.build_dir }}
         run: |
           name="obs-countdown-${{ matrix.target }}.sha256sum"
           if [[ "$RUNNER_OS" != "macOS" ]]; then
@@ -115,7 +120,7 @@ jobs:
 
       - name: Tar release
         id: make-artifact
-        working-directory: ./target/release
+        working-directory: ./${{ matrix.build_dir }}
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
           tar cvzf "${name}" ${{ env.FILENAME }}
@@ -139,6 +144,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ./target/release/${{ env.SHAFILENAME }}
+          asset_path: ./${{ matrix.build_dir }}/${{ env.SHAFILENAME }}
           asset_name: obs-countdown-${{matrix.target}}.sha256sum
           asset_content_type: text/plain
