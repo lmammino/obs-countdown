@@ -1,14 +1,13 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  release:
+    types:
+      - created
   workflow_dispatch:
 
 jobs:
   build-release:
-    needs: create-release
     name: build-release
     runs-on: ${{ matrix.os }}
     env:
@@ -94,36 +93,22 @@ jobs:
 
       - name: Upload release archive
         uses: actions/upload-release-asset@v1.0.2
+        if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }} 
+          upload_url: ${{ github.event.release.upload_url }} 
           asset_path: ./target/${{ matrix.target }}/release/${{ steps.make-artifact.outputs.name }}
           asset_name: obs-countdown-${{matrix.target}}.tar.gz
           asset_content_type: application/octet-stream
 
       - name: Upload checksum
         uses: actions/upload-release-asset@v1.0.2
+        if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }} 
+          upload_url: ${{ github.event.release.upload_url }} 
           asset_path: ./target/${{ matrix.target }}/release/${{ steps.make-checksum.outputs.name }}
           asset_name: obs-countdown-${{matrix.target}}.sha256sum
           asset_content_type: text/plain
-
-  create-release:
-    runs-on: ubuntu-latest
-    outputs: 
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - name: create_release 
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && '' || github.ref }}
-          release_name: Release ${{ github.event_name == 'workflow_dispatch' && 'main' || github.ref }}
-          draft: ${{ github.event_name == 'workflow_dispatch' }}
-          prerelease: false
