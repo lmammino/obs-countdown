@@ -86,12 +86,13 @@ jobs:
           EOF
 
       - name: Build release binary
+        shell: bash
         run: |
           ${{ matrix.cargo }} build --verbose --release
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             filename="obs-countdown.exe"
           else
-            filename="obs-countdown.exe"
+            filename="obs-countdown"
           fi
           bin="target/${{ matrix.target }}/release/$filename"
           echo "BIN=$bin" >> $GITHUB_ENV
