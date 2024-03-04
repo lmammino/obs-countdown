@@ -1,138 +1,118 @@
 use std::time::Duration;
 
-use nom::{
-    branch::alt,
-    bytes::complete::{tag, tag_no_case},
-    character::complete::{space0, u64},
-    combinator::{eof, opt},
-    error::ParseError,
-    sequence::{delimited, pair, preceded, terminated, tuple},
-    IResult, Parser,
+use winnow::{
+    ascii::{digit1, space0, Caseless},
+    combinator::{alt, delimited, opt, terminated},
+    error::{ContextError, ParseError},
+    PResult, Parser,
 };
 
-fn fragment<'a, E, S>(suffixes: S) -> impl FnMut(&'a str) -> IResult<&'a str, u64, E>
-where
-    E: ParseError<&'a str>,
-    S: Parser<&'a str, &'a str, E>,
-{
-    terminated(u64, preceded(space0, suffixes))
+fn fragment<'s>(
+    suffixes: impl Parser<&'s str, (), ContextError>,
+) -> impl Parser<&'s str, u64, ContextError> {
+    terminated(digit1, (space0, suffixes)).parse_to()
 }
 
-fn hour_suffixes(input: &str) -> IResult<&str, &str> {
+fn hour_suffixes(input: &mut &str) -> PResult<()> {
     alt((
-        tag_no_case("hours"),
-        tag_no_case("hour"),
-        tag_no_case("hrs"),
-        tag_no_case("hr"),
-        tag_no_case("h"),
-    ))(input)
+        Caseless("hours"),
+        Caseless("hour"),
+        Caseless("hrs"),
+        Caseless("hr"),
+        Caseless("h"),
+    ))
+    .void()
+    .parse_next(input)
 }
 
-fn minute_suffixes(input: &str) -> IResult<&str, &str> {
+fn minute_suffixes(input: &mut &str) -> PResult<()> {
     alt((
-        tag_no_case("minutes"),
-        tag_no_case("minute"),
-        tag_no_case("mins"),
-        tag_no_case("min"),
-        tag_no_case("mi"),
-        tag_no_case("m"),
-    ))(input)
+        Caseless("minutes"),
+        Caseless("minute"),
+        Caseless("mins"),
+        Caseless("min"),
+        Caseless("mi"),
+        Caseless("m"),
+    ))
+    .void()
+    .parse_next(input)
 }
 
-fn second_suffixes(input: &str) -> IResult<&str, &str> {
+fn second_suffixes(input: &mut &str) -> PResult<()> {
     alt((
-        tag_no_case("seconds"),
-        tag_no_case("second"),
-        tag_no_case("secs"),
-        tag_no_case("sec"),
-        tag_no_case("se"),
-        tag_no_case("s"),
-    ))(input)
+        Caseless("seconds"),
+        Caseless("second"),
+        Caseless("secs"),
+        Caseless("sec"),
+        Caseless("se"),
+        Caseless("s"),
+    ))
+    .void()
+    .parse_next(input)
 }
 
-fn separator(input: &str) -> IResult<&str, &str> {
+fn separator(input: &mut &str) -> PResult<()> {
     delimited(
         space0,
         alt((
-            preceded(opt(pair(tag(","), space0)), tag_no_case("and")),
-            tag(":"),
-            tag(","),
-            tag(";"),
-            space0,
+            (opt((',', space0)), Caseless("and")).void(),
+            ':'.void(),
+            ','.void(),
+            ';'.void(),
+            space0.void(),
         )),
         space0,
-    )(input)
+    )
+    .parse_next(input)
 }
 
-fn parse_time_full(input: &str) -> IResult<&str, Duration> {
-    let (input, (hours, _, minutes, _, seconds)) = terminated(
-        tuple((
-            opt(fragment(hour_suffixes)),
-            separator,
-            opt(fragment(minute_suffixes)),
-            separator,
-            opt(fragment(second_suffixes)),
-        )),
-        eof,
-    )(input)?;
+fn parse_time_full(input: &mut &str) -> PResult<Duration> {
+    let (hours, minutes, seconds) = (
+        opt(terminated(fragment(hour_suffixes), separator)),
+        opt(terminated(fragment(minute_suffixes), separator)),
+        opt(fragment(second_suffixes)),
+    )
+        .parse_next(input)?;
     let total_seconds =
         hours.unwrap_or(0) * 3600 + minutes.unwrap_or(0) * 60 + seconds.unwrap_or(0);
 
-    Ok((input, Duration::from_secs(total_seconds)))
+    Ok(Duration::from_secs(total_seconds))
 }
 
-pub fn parse(input: &str) -> Result<Duration, nom::Err<nom::error::Error<&str>>> {
-    parse_time_full(input).map(|(_, duration)| duration)
+pub fn parse(input: &str) -> Result<Duration, ParseError<&str, ContextError>> {
+    parse_time_full.parse(input)
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     #[test]
-    fn test_parse() {
-        assert_eq!(super::parse("1h"), Ok(std::time::Duration::from_secs(3600)));
+    fn parse() {
+        use super::parse;
+        use std::time::Duration;
+
+        assert_eq!(parse("1h"), Ok(Duration::from_secs(3600)));
+        assert_eq!(parse("1h 30m"), Ok(Duration::from_secs(5400)));
+        assert_eq!(parse("1h30m15s"), Ok(Duration::from_secs(5415)));
+        assert_eq!(parse("1h, 30m and 15s"), Ok(Duration::from_secs(5415)));
+        assert_eq!(parse("1h, 30m, and 15s"), Ok(Duration::from_secs(5415)));
+        assert_eq!(parse("1h:30m:15s"), Ok(Duration::from_secs(5415)));
+        assert_eq!(parse("1h;30m;15s"), Ok(Duration::from_secs(5415)));
         assert_eq!(
-            super::parse("1h 30m"),
-            Ok(std::time::Duration::from_secs(5400))
+            parse("1hour 30minutes and 15seconds"),
+            Ok(Duration::from_secs(5415))
         );
         assert_eq!(
-            super::parse("1h30m15s"),
-            Ok(std::time::Duration::from_secs(5415))
+            parse("1 hour 30 minutes and 15 seconds"),
+            Ok(Duration::from_secs(5415))
         );
         assert_eq!(
-            super::parse("1h, 30m and 15s"),
-            Ok(std::time::Duration::from_secs(5415))
+            parse("1 hour 30 minutes, and 15 seconds"),
+            Ok(Duration::from_secs(5415))
         );
         assert_eq!(
-            super::parse("1h, 30m, and 15s"),
-            Ok(std::time::Duration::from_secs(5415))
+            parse("1 hour 30 minutes 15 seconds"),
+            Ok(Duration::from_secs(5415))
         );
-        assert_eq!(
-            super::parse("1h:30m:15s"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1h;30m;15s"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1hour 30minutes and 15seconds"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1 hour 30 minutes and 15 seconds"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1 hour 30 minutes, and 15 seconds"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1 hour 30 minutes 15 seconds"),
-            Ok(std::time::Duration::from_secs(5415))
-        );
-        assert_eq!(
-            super::parse("1 hour 15 seconds"),
-            Ok(std::time::Duration::from_secs(3615))
-        );
+        assert_eq!(parse("1 hour 15 seconds"), Ok(Duration::from_secs(3615)));
     }
 }
