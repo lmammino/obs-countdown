@@ -89,11 +89,13 @@ jobs:
         run: |
           ${{ matrix.cargo }} build --verbose --release
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            bin="target/${{ matrix.target }}/release/obs-countdown.exe"
+            filename="obs-countdown.exe"
           else
-            bin="target/${{ matrix.target }}/release/obs-countdown"
+            filename="obs-countdown.exe"
           fi
+          bin="target/${{ matrix.target }}/release/$filename"
           echo "BIN=$bin" >> $GITHUB_ENV
+          echo "FILENAME=$filename" >> $GITHUB_ENV
 
       - name: List build artifacts
         run: ls -R target/
@@ -104,22 +106,18 @@ jobs:
         run: |
           name="obs-countdown-${{ matrix.target }}.sha256sum"
           if [[ "$RUNNER_OS" != "macOS" ]]; then
-            sha256sum "obs-countdown" > "${name}"
+            sha256sum "${{ env.FILENAME }}" > "${name}"
           else
-            shasum -a 256 "obs-countdown" > "${name}"
+            shasum -a 256 "${{ env.FILENAME }}" > "${name}"
           fi
-          echo "::set-output name=name::${name}"
+          echo "SHAFILENAME=$name" >> $GITHUB_ENV
 
       - name: Tar release
         id: make-artifact
         working-directory: ./target/${{ matrix.target }}/release
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            tar cvzf "${name}" "obs-countdown.exe"
-          else
-            tar cvzf "${name}" "obs-countdown"
-          fi
+          tar cvzf "${name}" ${{ env.FILENAME }}
           echo "::set-output name=name::${name}"
 
       - name: Upload release archive
@@ -129,7 +127,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ./target/${{ matrix.target }}/release/${{ steps.make-artifact.outputs.name }}
+          asset_path: ${{ env.BIN }}
           asset_name: obs-countdown-${{matrix.target}}.tar.gz
           asset_content_type: application/octet-stream
 
@@ -140,6 +138,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ./target/${{ matrix.target }}/release/${{ steps.make-checksum.outputs.name }}
+          asset_path: ./target/${{ matrix.target }}/release/${{ env.SHAFILENAME }}
           asset_name: obs-countdown-${{matrix.target}}.sha256sum
           asset_content_type: text/plain
