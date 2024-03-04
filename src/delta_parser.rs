@@ -131,8 +131,8 @@ mod test {
             Ok(std::time::Duration::from_secs(5415))
         );
         assert_eq!(
-          super::parse("1 hour 15 seconds"),
-          Ok(std::time::Duration::from_secs(3615))
-      );
+            super::parse("1 hour 15 seconds"),
+            Ok(std::time::Duration::from_secs(3615))
+        );
     }
 }
