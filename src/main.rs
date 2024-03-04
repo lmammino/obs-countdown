@@ -1,6 +1,7 @@
 use clap::Parser;
 use format::format;
 use std::{
+    env,
     fs::{canonicalize, File},
     io::{stdout, Write},
     process::exit,
@@ -17,8 +18,8 @@ struct Args {
     /// If the file does not exist, it will be created.
     /// If no file is provided, it will create a file
     //  called "obs-countdown.txt" in the current folder.
-    #[arg(short, long, default_value = "obs-countdown.txt")]
-    file: String,
+    #[arg(short, long)]
+    file: Option<String>,
 
     /// Refresh rate in milliseconds
     #[arg(short, long, default_value_t = 500)]
@@ -61,14 +62,37 @@ fn main() {
     let starting_time = Instant::now();
     let target_time = starting_time + duration;
 
-    // parses the file path
-    let file_path = canonicalize(&args.file);
-    if file_path.is_err() {
+    let current_dir = env::current_dir();
+    if current_dir.is_err() {
         eprintln!(
-            "Failed to resolve file path '{}': {}",
-            &args.file,
-            file_path.unwrap_err()
+            "Failed to get current directory: {}",
+            current_dir.unwrap_err()
         );
+        exit(1);
+    }
+
+    let file_path = match &args.file {
+        Some(file) => file.into(),
+        None => current_dir.unwrap().join("obs-countdown.txt"),
+    };
+
+    // creates the file if it doesn't exist
+    if !&file_path.exists() {
+        let file = File::create(&file_path);
+        if file.is_err() {
+            eprintln!(
+                "Failed to create file '{}': {}",
+                &file_path.display(),
+                file.unwrap_err()
+            );
+            exit(1);
+        }
+    }
+
+    // canonicalize the file path
+    let file_path = canonicalize(file_path);
+    if file_path.is_err() {
+        eprintln!("Failed to resolve file path: {}", file_path.unwrap_err());
         exit(1);
     }
     let file_path = file_path.unwrap();
@@ -88,19 +112,6 @@ fn main() {
         // print to stdout
         print!("  ⏳  {} -> {}\r", message, &file_path.display());
         let _ = stdout().flush();
-
-        // creates the file if it doesn't exist
-        if !&file_path.exists() {
-            let file = File::create(&file_path);
-            if file.is_err() {
-                eprintln!(
-                    "Failed to create file '{}': {}",
-                    &file_path.display(),
-                    file.unwrap_err()
-                );
-                exit(1);
-            }
-        }
 
         // write to file
         let file = File::create(&file_path);
