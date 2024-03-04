@@ -94,7 +94,7 @@ jobs:
           else
             filename="obs-countdown"
           fi
-          bin="target/${{ matrix.target }}/release/$filename"
+          bin="target/release/$filename"
           echo "BIN=$bin" >> $GITHUB_ENV
           echo "FILENAME=$filename" >> $GITHUB_ENV
 
@@ -103,7 +103,7 @@ jobs:
 
       - name: Create checksum
         id: make-checksum
-        working-directory: ./target/${{ matrix.target }}/release
+        working-directory: ./target/release
         run: |
           name="obs-countdown-${{ matrix.target }}.sha256sum"
           if [[ "$RUNNER_OS" != "macOS" ]]; then
@@ -115,7 +115,7 @@ jobs:
 
       - name: Tar release
         id: make-artifact
-        working-directory: ./target/${{ matrix.target }}/release
+        working-directory: ./target/release
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
           tar cvzf "${name}" ${{ env.FILENAME }}
@@ -139,6 +139,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ./target/${{ matrix.target }}/release/${{ env.SHAFILENAME }}
+          asset_path: ./target/release/${{ env.SHAFILENAME }}
           asset_name: obs-countdown-${{matrix.target}}.sha256sum
           asset_content_type: text/plain
