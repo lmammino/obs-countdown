@@ -19,32 +19,34 @@ jobs:
           - linux musl aarch64
           - macos x64
           - macos aarch64
+          - pc windows msvc x64
         include:
           - build: linux musl x64
             os: ubuntu-latest
             rust: stable
             target: x86_64-unknown-linux-musl
+            cargo: cargo
           - build: linux musl aarch64
             os: ubuntu-latest
             rust: stable
             target: aarch64-unknown-linux-musl
+            cargo: cross
           - build: macos x64
             os: macos-latest
             rust: stable
             target: x86_64-apple-darwin
+            cargo: cargo
           - build: macos aarch64
             os: macos-latest
             rust: stable
             target: aarch64-apple-darwin
+            cargo: cargo
+          - build: pc windows msvc x64
+            os: windows-latest
+            rust: stable
+            target: x86_64-pc-windows-msvc
+            cargo: cargo
     steps:
-      - name: Set release tag
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == 'workflow_dispatch' ]; then
-            echo "RELEASE_TAG=main" >> "$GITHUB_ENV"
-          else
-            echo "RELEASE_TAG=${GITHUB_REF#refs/tags/}"  >> "$GITHUB_ENV"
-          fi
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -55,6 +57,21 @@ jobs:
           profile: minimal
           override: true
           target: ${{ matrix.target }}
+
+      - name: Use Cross
+        if: matrix.cargo == 'cross'
+        shell: bash
+        run: |
+          # In the past, new releases of 'cross' have broken CI. So for now, we
+          # pin it. We also use their pre-compiled binary releases because cross
+          # has over 100 dependencies and takes a bit to compile.
+          dir="$RUNNER_TEMP/cross-download"
+          mkdir "$dir"
+          echo "$dir" >> $GITHUB_PATH
+          cd "$dir"
+          curl -LO "https://github.com/cross-rs/cross/releases/download/$CROSS_VERSION/cross-x86_64-unknown-linux-musl.tar.gz"
+          tar xf cross-x86_64-unknown-linux-musl.tar.gz
+          echo "CARGO=cross" >> $GITHUB_ENV
 
       - name: Install musl-tools
         if: matrix.os == 'ubuntu-latest'
@@ -69,7 +86,14 @@ jobs:
           EOF
 
       - name: Build release binary
-        run: cargo xtask ci cross ${{ matrix.target }}
+        run: |
+          ${{ matrix.cargo }} build --verbose --release
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            bin="target/${{ matrix.target }}/release/obs-countdown.exe"
+          else
+            bin="target/${{ matrix.target }}/release/obs-countdown"
+          fi
+          echo "BIN=$bin" >> $GITHUB_ENV
 
       - name: Create checksum
         id: make-checksum
@@ -88,7 +112,11 @@ jobs:
         working-directory: ./target/${{ matrix.target }}/release
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
-          tar cvzf "${name}" "obs-countdown"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            tar cvzf "${name}" "obs-countdown.exe"
+          else
+            tar cvzf "${name}" "obs-countdown"
+          fi
           echo "::set-output name=name::${name}"
 
       - name: Upload release archive
