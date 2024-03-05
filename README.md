@@ -4,4 +4,8 @@
 [![codecov](https://codecov.io/gh/lmammino/obs-countdown/graph/badge.svg?token=2a5OOr6Um4)](https://codecov.io/gh/lmammino/obs-countdown)
 
 
-WIP: A CLI tool to write countdown timer files for OBS Studio
+A CLI tool to write countdown timer files for OBS Studio
+
+![A demo gif showing how obs-countdown works in conjunction with OBS](./docs/demo.gif)
+
+TODO: write docs

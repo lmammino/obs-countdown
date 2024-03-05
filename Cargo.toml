@@ -13,3 +13,9 @@ readme = "README.md"
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 winnow = "0.6.5"
+
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ target }-{ archive-suffix }"
+bin-dir = "{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
