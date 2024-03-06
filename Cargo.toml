@@ -1,6 +1,6 @@
 [package]
 name = "obs-countdown"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 authors = ["Luciano Mammino"]
 description = "A CLI tool to write countdown timer files for OBS Studio"
@@ -18,4 +18,4 @@ winnow = "0.6.5"
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ target }-{ archive-suffix }"
 bin-dir = "{ bin }{ binary-ext }"
-pkg-fmt = "tar.gz"
+pkg-fmt = "tgz"

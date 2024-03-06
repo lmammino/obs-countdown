@@ -123,7 +123,7 @@ jobs:
         id: make-artifact
         working-directory: ${{ env.BUILD_DIR }}
         run: |
-          name="obs-countdown-${{ matrix.target }}.tar.gz"
+          name="obs-countdown-${{ matrix.target }}.tgz"
           tar cvzf "${name}" ${{ env.FILENAME }}
           asset_path="${{ env.BUILD_DIR }}/${name}"
           echo "ASSET_PATH=$asset_path" >> $GITHUB_ENV
