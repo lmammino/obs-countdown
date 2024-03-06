@@ -86,6 +86,16 @@ obs-countdown [OPTIONS] [COUNTDOWN...]
 - `-V, --version`: Print version
 
 
+## Alternatives
+
+I have come across a few alternatives to `obs-countdown` that you might want to consider:
+
+  - [Snaz](https://github.com/JimmyAppelt/Snaz): GUI-based countdown streaming tools (including a countdown timer) for Windows.
+  - [My Stream Timer](https://apps.apple.com/us/app/my-stream-timer/id1460539461?mt=12): GUI-based app for macOS.
+
+If you know of any other alternative, please feel free to contribute to this list!
+
+
 ## 👷 Contributing
 
 Everyone is very welcome to contribute to this project.
