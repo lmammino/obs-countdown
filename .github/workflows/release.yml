@@ -102,7 +102,7 @@ jobs:
           echo "FILENAME=$filename" >> $GITHUB_ENV
 
       - name: List build artifacts
-        run: ls -R target/
+        run: ls -R ${{ env.BUILD_DIR }}
 
       - name: Create checksum
         shell: bash
