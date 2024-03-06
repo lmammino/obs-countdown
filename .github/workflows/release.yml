@@ -8,6 +8,8 @@ on:
 
 jobs:
   build-release:
+    permissions:
+      contents: write
     name: build-release
     runs-on: ${{ matrix.os }}
     env:
@@ -138,26 +140,16 @@ jobs:
           ls -al ${{ env.ASSET_SHA_PATH }}
 
       - name: Upload release archive
-        uses: actions/upload-release-asset@v1.0.2
+        uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ${{ env.ASSET_PATH }}
-          asset_name: obs-countdown-${{matrix.target}}.tar.gz
-          asset_content_type: application/octet-stream
+          files: ${{ env.ASSET_PATH }}
 
       - name: Upload checksum
-        uses: actions/upload-release-asset@v1.0.2
+        uses: softprops/action-gh-release@v1
         if: github.event_name == 'release'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }} 
-          asset_path: ${{ env.ASSET_SHA_PATH }}
-          asset_name: obs-countdown-${{matrix.target}}.sha256sum
-          asset_content_type: text/plain
+          files: ${{ env.ASSET_SHA_PATH }}
 
   release-on-crates-io:
     needs:
