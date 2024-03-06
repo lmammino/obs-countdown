@@ -16,7 +16,6 @@ winnow = "0.6.5"
 
 
 [package.metadata.binstall]
-https://github.com/lmammino/obs-countdown/releases/download/0.0.1/obs-countdown-aarch64-apple-darwin.tar.gz
 pkg-url = "{ repo }/releases/download/{ version }/{ name }-{ target }-{ archive-suffix }"
 bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "tar.gz"
