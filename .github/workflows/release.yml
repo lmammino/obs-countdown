@@ -121,7 +121,7 @@ jobs:
           else
             shasum -a 256 "${{ env.FILENAME }}" > "${name}"
           fi
-          asset_sha_path=$(realpath "${name}")
+          asset_sha_path="./${{ matrix.build_dir }}/${name}"
           echo "ASSET_SHA_PATH=$asset_sha_path" >> $GITHUB_ENV
 
       - name: Tar release
@@ -131,7 +131,7 @@ jobs:
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
           tar cvzf "${name}" ${{ env.FILENAME }}
-          asset_path=$(realpath "${name}")
+          asset_path="./${{ matrix.build_dir }}/${name}"
           echo "ASSET_PATH=$asset_path" >> $GITHUB_ENV
 
       - name: Prints assets paths
