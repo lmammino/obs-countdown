@@ -136,8 +136,8 @@ jobs:
 
       - name: Prints assets paths
         run: |
-          ls -al ${{ env.ASSET_PATH }}
-          ls -al ${{ env.ASSET_SHA_PATH }}
+          ls ${{ env.ASSET_PATH }}
+          ls ${{ env.ASSET_SHA_PATH }}
 
       - name: Upload release archive
         uses: softprops/action-gh-release@v1
