@@ -29,31 +29,26 @@ jobs:
             rust: stable
             target: x86_64-unknown-linux-musl
             cargo: cargo
-            build_dir: "target/release"
           - build: linux musl aarch64
             os: ubuntu-latest
             rust: stable
             target: aarch64-unknown-linux-musl
             cargo: cross
-            build_dir: "target/x86_64-unknown-linux-gnu/release"
           - build: macos x64
             os: macos-latest
             rust: stable
             target: x86_64-apple-darwin
             cargo: cargo
-            build_dir: "target/release"
           - build: macos aarch64
             os: macos-latest
             rust: stable
             target: aarch64-apple-darwin
             cargo: cargo
-            build_dir: "target/release"
           - build: pc windows msvc x64
             os: windows-latest
             rust: stable
             target: x86_64-pc-windows-msvc
             cargo: cargo
-            build_dir: "target/release"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -101,7 +96,8 @@ jobs:
           else
             filename="obs-countdown"
           fi
-          bin="${{ matrix.build_dir }}/$filename"
+          bin="./target/${{ matrix.target }}/release/$filename"
+          echo "BUILD_DIR=./target/${{ matrix.target }}/release"
           echo "BIN=$bin" >> $GITHUB_ENV
           echo "FILENAME=$filename" >> $GITHUB_ENV
 
@@ -111,7 +107,7 @@ jobs:
       - name: Create checksum
         shell: bash
         id: make-checksum
-        working-directory: ./${{ matrix.build_dir }}
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
           name="obs-countdown-${{ matrix.target }}.sha256sum"
           if [[ "$RUNNER_OS" != "macOS" ]]; then
@@ -119,17 +115,17 @@ jobs:
           else
             shasum -a 256 "${{ env.FILENAME }}" > "${name}"
           fi
-          asset_sha_path="./${{ matrix.build_dir }}/${name}"
+          asset_sha_path="${{ env.BUILD_DIR }}/${name}"
           echo "ASSET_SHA_PATH=$asset_sha_path" >> $GITHUB_ENV
 
       - name: Tar release
         shell: bash
         id: make-artifact
-        working-directory: ./${{ matrix.build_dir }}
+        working-directory: ${{ env.BUILD_DIR }}
         run: |
           name="obs-countdown-${{ matrix.target }}.tar.gz"
           tar cvzf "${name}" ${{ env.FILENAME }}
-          asset_path="./${{ matrix.build_dir }}/${name}"
+          asset_path="${{ env.BUILD_DIR }}/${name}"
           echo "ASSET_PATH=$asset_path" >> $GITHUB_ENV
 
       - name: Prints assets paths
