@@ -97,7 +97,7 @@ jobs:
             filename="obs-countdown"
           fi
           bin="./target/${{ matrix.target }}/release/$filename"
-          echo "BUILD_DIR=./target/${{ matrix.target }}/release"
+          echo "BUILD_DIR=./target/${{ matrix.target }}/release" >> $GITHUB_ENV
           echo "BIN=$bin" >> $GITHUB_ENV
           echo "FILENAME=$filename" >> $GITHUB_ENV
 
