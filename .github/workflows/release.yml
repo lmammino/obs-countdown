@@ -151,3 +151,14 @@ jobs:
           asset_path: ./${{ matrix.build_dir }}/${{ env.SHAFILENAME }}
           asset_name: obs-countdown-${{matrix.target}}.sha256sum
           asset_content_type: text/plain
+
+  release-on-crates-io:
+    needs:
+        - build-release
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v4
+        - name: Release on Crates.io
+          run: |
+              cargo login ${{ secrets.CARGO_TOKEN }}
+              cargo publish

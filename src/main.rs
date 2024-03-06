@@ -17,7 +17,7 @@ struct Args {
     /// Path to the file where to store the countdown.
     /// If the file does not exist, it will be created.
     /// If no file is provided, it will create a file
-    //  called "obs-countdown.txt" in the current folder.
+    /// called `obs-countdown.txt` in the current directory.
     #[arg(short, long)]
     file: Option<String>,
 
