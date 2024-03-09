@@ -87,7 +87,7 @@ obs-countdown [OPTIONS] [COUNTDOWN...]
 - `-V, --version`: Print version
 
 
-## Alternatives
+## 🤌 Alternatives
 
 I have come across a few alternatives to `obs-countdown` that you might want to consider:
 
